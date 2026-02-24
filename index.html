@@ -1,128 +1,253 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Calculator</title>
-    <style>
-        body {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            background: linear-gradient(135deg, #667eea, #764ba2);
-            font-family: Arial;
-        }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Music Player</title>
 
-        .calculator {
-            background: #222;
-            padding: 20px;
-            border-radius: 15px;
-            width: 300px;
-        }
+<style>
+body{
+    margin:0;
+    font-family:Arial, sans-serif;
+    background:linear-gradient(135deg,#1e3c72,#2a5298);
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    height:100vh;
+    color:white;
+}
 
-        .display {
-            width: 100%;
-            height: 60px;
-            font-size: 24px;
-            margin-bottom: 15px;
-            text-align: right;
-            padding: 10px;
-            border-radius: 8px;
-            border: none;
-        }
+.player{
+    background:#111;
+    width:350px;
+    padding:20px;
+    border-radius:15px;
+    text-align:center;
+    box-shadow:0 10px 20px rgba(0,0,0,0.5);
+}
 
-        .buttons {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 10px;
-        }
+h2{
+    margin:10px 0 5px;
+}
 
-        button {
-            padding: 15px;
-            font-size: 18px;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: 0.3s;
-        }
+p{
+    margin:0;
+    font-size:14px;
+    color:#aaa;
+}
 
-        button:hover {
-            background: #ff9800;
-            color: white;
-        }
+.controls{
+    margin:15px 0;
+}
 
-        .equal {
-            grid-column: span 2;
-            background: #ff9800;
-            color: white;
-        }
+button{
+    background:#2a5298;
+    border:none;
+    color:white;
+    padding:10px 15px;
+    margin:5px;
+    border-radius:50%;
+    cursor:pointer;
+    font-size:16px;
+}
 
-        .clear {
-            background: red;
-            color: white;
-        }
-    </style>
+button:hover{
+    background:#1e3c72;
+}
+
+.progress-container{
+    background:#444;
+    height:5px;
+    width:100%;
+    border-radius:5px;
+    cursor:pointer;
+    margin:15px 0;
+}
+
+.progress{
+    background:#2a5298;
+    height:100%;
+    width:0%;
+    border-radius:5px;
+}
+
+.time{
+    display:flex;
+    justify-content:space-between;
+    font-size:12px;
+}
+
+.volume{
+    margin-top:10px;
+}
+
+input[type="range"]{
+    width:100%;
+}
+
+.playlist{
+    margin-top:15px;
+    text-align:left;
+    max-height:100px;
+    overflow-y:auto;
+}
+
+.playlist div{
+    padding:5px;
+    cursor:pointer;
+}
+
+.playlist div:hover{
+    background:#333;
+}
+</style>
 </head>
+
 <body>
 
-<div class="calculator">
-    <input type="text" class="display" id="display" disabled>
+<div class="player">
+    <h2 id="title">Song Title</h2>
+    <p id="artist">Artist Name</p>
 
-    <div class="buttons">
-        <button onclick="clearDisplay()" class="clear">C</button>
-        <button onclick="append('/')">/</button>
-        <button onclick="append('*')">*</button>
-        <button onclick="append('-')">-</button>
-
-        <button onclick="append('7')">7</button>
-        <button onclick="append('8')">8</button>
-        <button onclick="append('9')">9</button>
-        <button onclick="append('+')">+</button>
-
-        <button onclick="append('4')">4</button>
-        <button onclick="append('5')">5</button>
-        <button onclick="append('6')">6</button>
-
-        <button onclick="append('1')">1</button>
-        <button onclick="append('2')">2</button>
-        <button onclick="append('3')">3</button>
-
-        <button onclick="append('0')">0</button>
-        <button onclick="append('.')">.</button>
-        <button onclick="calculate()" class="equal">=</button>
+    <div class="progress-container" id="progress-container">
+        <div class="progress" id="progress"></div>
     </div>
+
+    <div class="time">
+        <span id="current-time">0:00</span>
+        <span id="duration">0:00</span>
+    </div>
+
+    <div class="controls">
+        <button onclick="prevSong()">⏮</button>
+        <button onclick="playPause()" id="playBtn">▶</button>
+        <button onclick="nextSong()">⏭</button>
+    </div>
+
+    <div class="volume">
+        Volume
+        <input type="range" min="0" max="1" step="0.01" id="volume">
+    </div>
+
+    <div class="playlist" id="playlist"></div>
+
+    <audio id="audio"></audio>
 </div>
 
 <script>
-    const display = document.getElementById("display");
-
-    function append(value){
-        display.value += value;
+const songs = [
+    {
+        title: "Sample Song 1",
+        artist: "Artist 1",
+        src: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3"
+    },
+    {
+        title: "Sample Song 2",
+        artist: "Artist 2",
+        src: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3"
+    },
+    {
+        title: "Sample Song 3",
+        artist: "Artist 3",
+        src: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3"
     }
+];
 
-    function clearDisplay(){
-        display.value = "";
+let currentSong = 0;
+
+const audio = document.getElementById("audio");
+const title = document.getElementById("title");
+const artist = document.getElementById("artist");
+const progress = document.getElementById("progress");
+const progressContainer = document.getElementById("progress-container");
+const currentTimeEl = document.getElementById("current-time");
+const durationEl = document.getElementById("duration");
+const volume = document.getElementById("volume");
+const playlist = document.getElementById("playlist");
+const playBtn = document.getElementById("playBtn");
+
+function loadSong(song){
+    title.innerText = song.title;
+    artist.innerText = song.artist;
+    audio.src = song.src;
+}
+
+function playPause(){
+    if(audio.paused){
+        audio.play();
+        playBtn.innerText = "⏸";
+    } else {
+        audio.pause();
+        playBtn.innerText = "▶";
     }
+}
 
-    function calculate(){
-        try{
-            display.value = eval(display.value);
-        } catch{
-            display.value = "Error";
-        }
+function nextSong(){
+    currentSong++;
+    if(currentSong > songs.length - 1){
+        currentSong = 0;
     }
+    loadSong(songs[currentSong]);
+    audio.play();
+    playBtn.innerText = "⏸";
+}
 
-    // Keyboard Support
-    document.addEventListener("keydown", function(event){
-        if("0123456789+-*/.".includes(event.key)){
-            append(event.key);
-        } else if(event.key === "Enter"){
-            calculate();
-        } else if(event.key === "Backspace"){
-            display.value = display.value.slice(0, -1);
-        } else if(event.key === "Escape"){
-            clearDisplay();
-        }
+function prevSong(){
+    currentSong--;
+    if(currentSong < 0){
+        currentSong = songs.length - 1;
+    }
+    loadSong(songs[currentSong]);
+    audio.play();
+    playBtn.innerText = "⏸";
+}
+
+audio.addEventListener("timeupdate", () => {
+    const {currentTime, duration} = audio;
+    const progressPercent = (currentTime / duration) * 100;
+    progress.style.width = progressPercent + "%";
+
+    currentTimeEl.innerText = formatTime(currentTime);
+    durationEl.innerText = formatTime(duration);
+});
+
+function formatTime(time){
+    const min = Math.floor(time / 60);
+    const sec = Math.floor(time % 60);
+    return min + ":" + (sec < 10 ? "0" + sec : sec);
+}
+
+progressContainer.addEventListener("click", (e) => {
+    const width = progressContainer.clientWidth;
+    const clickX = e.offsetX;
+    const duration = audio.duration;
+    audio.currentTime = (clickX / width) * duration;
+});
+
+volume.addEventListener("input", () => {
+    audio.volume = volume.value;
+});
+
+audio.addEventListener("ended", nextSong);
+
+function loadPlaylist(){
+    songs.forEach((song, index) => {
+        const div = document.createElement("div");
+        div.innerText = song.title + " - " + song.artist;
+        div.onclick = () => {
+            currentSong = index;
+            loadSong(songs[currentSong]);
+            audio.play();
+            playBtn.innerText = "⏸";
+        };
+        playlist.appendChild(div);
     });
+}
+
+loadSong(songs[currentSong]);
+loadPlaylist();
+volume.value = 0.5;
+audio.volume = 0.5;
 </script>
 
 </body>
